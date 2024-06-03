@@ -72,7 +72,7 @@ if [ "$1" = 'drachtio' ]; then
     --cloud-deployment)
       MYARGS+=("--contact")
       MYARGS+=("sip:${LOCAL_IP}:${DRACHTIO_SIP_PORT:-5060};transport=udp,tcp")
-      if [ -n "$PUBLIC_IP" ] && [ -z "$PRIVATE_IP_ONLY" ]; then
+      if [[ -n "$PUBLIC_IP" && ( -z "$PRIVATE_IP_ONLY" || "$PRIVATE_IP_ONLY" == false ) ]]; then
         if [[ "$CLOUD" == "digitalocean" ]]; then
           MYARGS+=("--contact")
           MYARGS+=("sip:${PUBLIC_IP}:${DRACHTIO_SIP_PORT:-5060};transport=udp,tcp")
@@ -96,7 +96,7 @@ done
 if [[ -n "$WSS_PORT" ]]; then
   MYARGS+=("--contact")
   MYARGS+=("sips:${LOCAL_IP}:$WSS_PORT;transport=wss")
-  if [[ -n "$PUBLIC_IP" && -z "$PRIVATE_IP_ONLY" ]]; then
+  if [[ -n "$PUBLIC_IP" && ( -z "$PRIVATE_IP_ONLY" || "$PRIVATE_IP_ONLY" == false ) ]]; then
     if [[ "$CLOUD" == "digitalocean" ]]; then
       MYARGS+=("--contact")
       MYARGS+=("sip:${PUBLIC_IP}:$WSS_PORT;transport=udp,tcp")
@@ -110,7 +110,7 @@ fi
 if [[ -n "$TLS_PORT" ]]; then
   MYARGS+=("--contact")
   MYARGS+=("sips:${LOCAL_IP}:$TLS_PORT;transport=tls")
-  if [[ -n "$PUBLIC_IP" && -z "$PRIVATE_IP_ONLY" ]]; then
+  if [[ -n "$PUBLIC_IP" && ( -z "$PRIVATE_IP_ONLY" || "$PRIVATE_IP_ONLY" == false ) ]]; then
     if [[ "$CLOUD" == "digitalocean" ]]; then
       MYARGS+=("--contact")
       MYARGS+=("sip:${PUBLIC_IP}:$TLS_PORT;transport=tls")
