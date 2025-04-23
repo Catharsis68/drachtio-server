@@ -1,40 +1,98 @@
-FROM debian:bookworm-slim
+# Stage 1: Build environment
+FROM debian:bookworm-slim AS builder
 
 ARG BUILD_CPUS=16
-ARG DETECTED_TAG=v0.8.27-rc17
+ARG DETECTED_TAG=v0.8.27-rc17-tmp-1
 
-RUN apt-get update \
-  && apt-get -y --quiet --force-yes upgrade \
-  && apt-get install -y --no-install-recommends ca-certificates gcc g++ make build-essential cmake git autoconf automake  curl libtool libtool-bin libssl-dev libcurl4-openssl-dev zlib1g-dev libgoogle-perftools-dev jq \
-  && git clone --depth=50 https://github.com/drachtio/drachtio-server.git /usr/local/src/drachtio-server \
-  && cd /usr/local/src/drachtio-server \
-  && git fetch --tags \
-  && echo "checking out ${DETECTED_TAG}" \
-  && git checkout ${DETECTED_TAG} \
-  && git submodule update --init --recursive \
-  && ./bootstrap.sh \
-  && mkdir build \
-  && cd build \
-  && ../configure --enable-tcmalloc=yes CPPFLAGS='-DNDEBUG' CXXFLAGS='-O2' \
-  && make -j${BUILD_CPUS} \
-  && make install \
-  && apt-get purge -y --quiet --auto-remove gcc g++ make cmake build-essential git autoconf automake libtool libtool-bin \
-  && rm -rf /var/lib/apt/* \
-  && rm -rf /var/lib/dpkg/* \
-  && rm -rf /var/lib/cache/* \
-  && rm -Rf /var/log/* \
-  && rm -Rf /var/lib/apt/lists/* \
-  && cd /usr/local/src \
-  && cp drachtio-server/docker.drachtio.conf.xml /etc/drachtio.conf.xml \
-  && cp drachtio-server/entrypoint.sh / \
-  && rm -Rf drachtio-server \
-  && cd /usr/local/bin \
-  && rm -f timer ssltest parser uri_test test_https test_asio_curl
+ARG BUILD_FROM_LOCAL=false
 
-COPY ./entrypoint.sh /
+# Install build dependencies
+RUN set -ex \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y upgrade \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        # Build tools
+        autoconf \
+        automake \
+        build-essential \
+        cmake \
+        g++ \
+        gcc \
+        git \
+        libtool \
+        libtool-bin \
+        make \
+        pkg-config \
+        python3 \
+        autoconf-archive \
+        # Required libraries for building
+        ca-certificates \
+        libcurl4-openssl-dev \
+        libgoogle-perftools-dev \
+        libssl-dev \
+        zlib1g-dev
+
+RUN mkdir -p /usr/local/src/drachtio-server
+
+# Copy local source code if building locally
+COPY . /usr/local/src/drachtio-server-local/
+
+# Use a script to handle the build logic
+RUN set -ex \
+    && if [ "$BUILD_FROM_LOCAL" = "true" ]; then \
+         cp -r /usr/local/src/drachtio-server-local/* /usr/local/src/drachtio-server/ \
+         && cd /usr/local/src/drachtio-server \
+         && git init \
+         && git submodule init \
+         && git submodule update --init --recursive; \
+       else \
+         git clone --depth=1 --branch ${DETECTED_TAG} --single-branch \
+         https://github.com/Catharsis68/drachtio-server /usr/local/src/drachtio-server \
+         && cd /usr/local/src/drachtio-server \
+         && git verify-tag ${DETECTED_TAG} || true \
+         && git submodule update --init --recursive --depth=1; \
+       fi \
+    && cd /usr/local/src/drachtio-server \
+    && git submodule foreach 'git submodule update --init --recursive' \
+    && ./bootstrap.sh \
+    && rm -rf build \
+    && mkdir build \
+    && cd build \
+    && ../configure --enable-tcmalloc=yes \
+       CPPFLAGS='-DNDEBUG' \
+       CXXFLAGS='-O2 -Wall -Wextra' \
+    && make -j${BUILD_CPUS} \
+    && make install
+
+# Stage 2: Runtime environment
+FROM debian:bookworm-slim
+
+ARG DETECTED_TAG
+LABEL version="${DETECTED_TAG}"
+
+# Install runtime dependencies only
+RUN set -ex \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        curl \
+        jq \
+        libcurl4 \
+        libgoogle-perftools4 \
+        libssl3 \
+        zlib1g \
+    && rm -rf \
+        /var/lib/apt/* \
+        /var/lib/dpkg/* \
+        /var/lib/cache/* \
+        /var/log/* \
+        /var/lib/apt/lists/*
+
+# Copy built artifacts from builder stage
+COPY --from=builder /usr/local/bin/drachtio /usr/local/bin/
+COPY --from=builder /usr/local/src/drachtio-server/docker.drachtio.conf.xml /etc/drachtio.conf.xml
+COPY --chmod=755 ./entrypoint.sh /
 
 VOLUME ["/config"]
 
 ENTRYPOINT ["/entrypoint.sh"]
-
 CMD ["drachtio"]

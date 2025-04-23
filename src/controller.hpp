@@ -76,6 +76,7 @@ THE SOFTWARE.
 #include "request-router.hpp"
 #include "stats-collector.hpp"
 #include "blacklist.hpp"
+#include "tmpbanlist.hpp"
 
 using namespace std ;
 

@@ -1233,7 +1233,7 @@ namespace drachtio {
 
             DR_LOG(log_notice) << "DrachtioController::run - tmpban checking config" << ", key is " << m_tmpBanRedisKey;
             m_pTmpBanList = new TmpBanList(m_redisAddress, m_redisPort, m_redisPassword, m_tmpBanRedisKey, m_tmpBanRedisRefreshSecs);
-            m_pTmpBanList->start();   
+            m_pTmpBanList->start();
         }
 
         if (m_redisAddress.length() && m_redisKey.length()) {
