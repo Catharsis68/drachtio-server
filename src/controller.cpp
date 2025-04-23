@@ -1235,7 +1235,7 @@ namespace drachtio {
                 m_tmpBanRedisKey = "tmpban:ip";
             }
             if (m_tmpBanRedisRefreshSecs == 0) {
-                    m_tmpBanRedisRefreshSecs = 30;
+                m_tmpBanRedisRefreshSecs = 30;
             }   
             m_pTmpBanList = new TmpBanList(
                 m_redisAddress,
