@@ -1240,7 +1240,7 @@ namespace drachtio {
                 m_tmpBanRedisRefreshSecs = 30;
             }
             
-            m_pBlacklist = new Blacklist(m_redisAddress, m_redisPort, m_redisPassword, m_redisKey, m_redisRefreshSecs, m_tmpBanRedisKey, m_tmpBanRedisRefreshSecs);
+            m_pBlacklist = new Blacklist(m_redisAddress, m_redisPort, m_redisPassword, m_redisKey, m_redisRefreshSecs);
             m_pBlacklist->start();
         }
         else if (m_redisSentinels.length() && m_redisMaster.length() &&  m_redisKey.length()) {
