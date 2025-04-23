@@ -75,6 +75,7 @@ const string STATS_COUNTER_SIP_REQUESTS_IN = "drachtio_sip_requests_in_total";
 const string STATS_COUNTER_SIP_REQUESTS_OUT = "drachtio_sip_requests_out_total";
 const string STATS_COUNTER_SIP_RESPONSES_IN = "drachtio_sip_responses_in_total";
 const string STATS_COUNTER_SIP_RESPONSES_OUT = "drachtio_sip_responses_out_total";
+const string STATS_COUNTER_TMPBAN_BLOCKED = "drachtio_tmpban_blocked_total"; 
 
 const string STATS_GAUGE_START_TIME = "drachtio_time_started";
 const string STATS_GAUGE_STABLE_DIALOGS = "drachtio_stable_dialogs";

@@ -15,7 +15,7 @@ $ curl 127.0.0.1:9099/metrics
 # TYPE drachtio_sip_responses_out_total counter
 # HELP drachtio_build_info drachtio version running
 # TYPE drachtio_build_info counter
-drachtio_build_info{version="v0.8.0-rc7-20-gaf3ddfac7"} 1.000000
+drachtio_build_info{version="v0.8.27-rc17-gaf3ddfac7"} 1.000000
 # HELP drachtio_time_started drachtio start time
 # TYPE drachtio_time_started gauge
 drachtio_time_started 1555075955.000000
