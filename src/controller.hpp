@@ -127,7 +127,8 @@ namespace drachtio {
     std::shared_ptr<SipProxyController> getProxyController(void) { return m_pProxyController ; }
     su_root_t* getRoot(void) { return m_root; }
     Blacklist* getBlacklist() { return m_pBlacklist; }
-  
+    TmpBanList* getTmpBanList() { return m_pTmpBanList; }
+
     enum severity_levels getCurrentLoglevel() { return m_current_severity_threshold; }
 
     /* network --> client messages */
@@ -254,6 +255,7 @@ namespace drachtio {
     std::shared_ptr<SipProxyController> m_pProxyController ;
     std::shared_ptr<PendingRequestController> m_pPendingRequestController ;
     Blacklist *m_pBlacklist ;
+    TmpBanList *m_pTmpBanList ;
 
     std::shared_ptr<StackMsg> m_lastSentMsg ;
     std::shared_ptr<StackMsg> m_lastRecvMsg ;

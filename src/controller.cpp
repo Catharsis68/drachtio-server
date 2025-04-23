@@ -293,7 +293,7 @@ namespace drachtio {
         m_nPrometheusPort(0), m_strPrometheusAddress("0.0.0.0"), m_tcpKeepaliveSecs(UINT16_MAX), m_bDumpMemory(false),
         m_minTlsVersion(0), m_bDisableNatDetection(false), m_pBlacklist(nullptr), m_bAlwaysSend180(false), 
         m_bGloballyReadableLogs(false), m_bTlsVerifyClientCert(false), m_bRejectRegisterWithNoRealm(false),
-        m_tmpBanRedisKey(""), m_tmpBanRedisRefreshSecs(0), m_pTmpBanList(nullptr)  {
+        m_tmpBanRedisKey("tmpban:ip"), m_tmpBanRedisRefreshSecs(30), m_pTmpBanList(nullptr)  {
 
         getEnv();
 
@@ -760,6 +760,8 @@ namespace drachtio {
         cerr << "    --blacklist-refresh-secs           how often to check for new blacklisted IPs" << endl;
         cerr << "    --blacklist-redis-sentinels        comma-separated list of redis sentinels in ip:port format" << endl;
         cerr << "    --blacklist-redis-password         password for redis server, if required" << endl;
+        cerr << "    --tmp-ban-redis-key                key for a redis hash that contains temporary banned IPs" << endl;
+        cerr << "    --tmp-ban-redis-refresh-secs       how often to check for new temporary banned IPs" << endl;
         cerr << "    --daemon                           Run the process as a daemon background process" << endl ;
         cerr << "    --cert-file                        TLS certificate file" << endl ;
         cerr << "    --chain-file                       TLS certificate chain file" << endl ;
@@ -1231,12 +1233,10 @@ namespace drachtio {
         }
              
         if (m_redisAddress.length() && m_redisKey.length()) {
-            if (m_tmpBanRedisKey.empty()) {
-                m_tmpBanRedisKey = "tmpban:ip";
-            }
-            if (m_tmpBanRedisRefreshSecs == 0) {
-                m_tmpBanRedisRefreshSecs = 30;
-            }   
+            DR_LOG(log_notice) << "DrachtioController::run - tmpban is in redis " << m_redisAddress << ":" << m_redisPort 
+                << ", key is " << m_redisKey;
+            
+            DR_LOG(log_notice) << "DrachtioController::run - tmpban refresh secs is " << m_tmpBanRedisRefreshSecs;
             m_pTmpBanList = new TmpBanList(
                 m_redisAddress,
                 m_redisPort,
