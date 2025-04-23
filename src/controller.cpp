@@ -1693,29 +1693,6 @@ namespace drachtio {
         return rc ;
     }
 
-    bool DrachtioController::checkTmpBan(const char* ip) {
-        if (!m_redisAddress.length() || !m_tmpBanRedisKey.length()) {
-            return false;
-        }
-
-        string key = m_tmpBanRedisKey + ":" + ip;
-        bool isBanned = false;
-
-        // Use the existing Redis connection to check if IP is banned
-        redisReply* reply = (redisReply*) redisCommand(m_redisContext, "EXISTS %s", key.c_str());
-        if (reply) {
-            isBanned = (reply->integer == 1);
-            freeReplyObject(reply);
-
-            if (isBanned) {
-                DR_LOG(log_info) << "IP " << ip << " is temporarily banned";
-                STATS_COUNTER_INCREMENT(STATS_COUNTER_TMPBAN_BLOCKED, {{"ip", ip}});
-            }
-        }
-
-        return isBanned;
-    }   
-
     bool DrachtioController::setupLegForIncomingRequest( const string& transactionId, const string& tag ) {
         //DR_LOG(log_debug) << "DrachtioController::setupLegForIncomingRequest - entering"  ;
         std::shared_ptr<PendingRequest_t> p = m_pPendingRequestController->findAndRemove( transactionId ) ;
