@@ -1,7 +1,7 @@
 FROM debian:bookworm-slim
 
-ARG BUILD_CPUS=2
-ARG DETECTED_TAG=branch/0.8
+ARG BUILD_CPUS=16
+ARG DETECTED_TAG=v0.8.27-rc17
 
 RUN apt-get update \
   && apt-get -y --quiet --force-yes upgrade \
