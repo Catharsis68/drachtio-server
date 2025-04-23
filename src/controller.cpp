@@ -1225,7 +1225,7 @@ namespace drachtio {
                 m_redisMaster = redisMaster;
                 m_redisPassword = redisPassword;
                 m_redisPort = redisPort;
-                m_redisKey = redisKey;                
+                m_redisKey = redisKey;
                 m_redisRefreshSecs = redisRefreshSecs;
             }
         }
@@ -1249,7 +1249,7 @@ namespace drachtio {
         
         if (m_redisAddress.length() && m_redisKey.length()) {
             DR_LOG(log_notice) << "DrachtioController::run - blacklist is in redis " << m_redisAddress << ":" << m_redisPort 
-                << ", key is " << m_redisKey;            
+                << ", key is " << m_redisKey;
             m_pBlacklist = new Blacklist(m_redisAddress, m_redisPort, m_redisPassword, m_redisKey, m_redisRefreshSecs);
             m_pBlacklist->start();
         }
