@@ -1230,23 +1230,12 @@ namespace drachtio {
                 m_redisKey = redisKey;
                 m_redisRefreshSecs = redisRefreshSecs;
             }
+
+            DR_LOG(log_notice) << "DrachtioController::run - tmpban checking config" << ", key is " << m_tmpBanRedisKey;
+            m_pTmpBanList = new TmpBanList(m_redisAddress, m_redisPort, m_redisPassword, m_tmpBanRedisKey, m_tmpBanRedisRefreshSecs);
+            m_pTmpBanList->start();   
         }
-             
-        if (m_redisAddress.length() && m_redisKey.length()) {
-            DR_LOG(log_notice) << "DrachtioController::run - tmpban is in redis " << m_redisAddress << ":" << m_redisPort 
-                << ", key is " << m_redisKey;
-            
-            DR_LOG(log_notice) << "DrachtioController::run - tmpban refresh secs is " << m_tmpBanRedisRefreshSecs;
-            m_pTmpBanList = new TmpBanList(
-                m_redisAddress,
-                m_redisPort,
-                m_redisPassword,
-                m_tmpBanRedisKey,
-                m_tmpBanRedisRefreshSecs
-            );
-            m_pTmpBanList->start();    
-        }    
-        
+
         if (m_redisAddress.length() && m_redisKey.length()) {
             DR_LOG(log_notice) << "DrachtioController::run - blacklist is in redis " << m_redisAddress << ":" << m_redisPort 
                 << ", key is " << m_redisKey;
