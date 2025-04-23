@@ -293,7 +293,7 @@ namespace drachtio {
         m_nPrometheusPort(0), m_strPrometheusAddress("0.0.0.0"), m_tcpKeepaliveSecs(UINT16_MAX), m_bDumpMemory(false),
         m_minTlsVersion(0), m_bDisableNatDetection(false), m_pBlacklist(nullptr), m_bAlwaysSend180(false), 
         m_bGloballyReadableLogs(false), m_bTlsVerifyClientCert(false), m_bRejectRegisterWithNoRealm(false),
-        m_tmpBanRedisKey(""), m_tmpBanRedisRefreshSecs(0)  {
+        m_tmpBanRedisKey(""), m_tmpBanRedisRefreshSecs(0), m_pTmpBanList(nullptr)  {
 
         getEnv();
 
@@ -1229,17 +1229,27 @@ namespace drachtio {
                 m_redisRefreshSecs = redisRefreshSecs;
             }
         }
+             
         if (m_redisAddress.length() && m_redisKey.length()) {
-            DR_LOG(log_notice) << "DrachtioController::run - blacklist is in redis " << m_redisAddress << ":" << m_redisPort 
-                << ", key is " << m_redisKey;
-             // Set default values for temporary ban configuration
             if (m_tmpBanRedisKey.empty()) {
                 m_tmpBanRedisKey = "tmpban:ip";
             }
             if (m_tmpBanRedisRefreshSecs == 0) {
-                m_tmpBanRedisRefreshSecs = 30;
-            }
-            
+                    m_tmpBanRedisRefreshSecs = 30;
+            }   
+            m_pTmpBanList = new TmpBanList(
+                m_redisAddress,
+                m_redisPort,
+                m_redisPassword,
+                m_tmpBanRedisKey,
+                m_tmpBanRedisRefreshSecs
+            );
+            m_pTmpBanList->start();    
+        }    
+        
+        if (m_redisAddress.length() && m_redisKey.length()) {
+            DR_LOG(log_notice) << "DrachtioController::run - blacklist is in redis " << m_redisAddress << ":" << m_redisPort 
+                << ", key is " << m_redisKey;            
             m_pBlacklist = new Blacklist(m_redisAddress, m_redisPort, m_redisPassword, m_redisKey, m_redisRefreshSecs);
             m_pBlacklist->start();
         }
@@ -1431,7 +1441,7 @@ namespace drachtio {
         }
         string host;
         getSourceAddressForMsg(msg, host);
-        if (checkTmpBan(host.c_str())) {
+        if (m_pTmpBanList && m_pTmpBanList->isBanned(host.c_str())) {
             DR_LOG(log_info) << "DrachtioController::processMessageStatelessly - rejecting request from temporarily banned IP " << host;
             return -1;
         }
