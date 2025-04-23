@@ -4,9 +4,11 @@
 #include <boost/asio.hpp>
 #include <unordered_map>
 #include <thread>
+#include <mutex>
 #include <chrono>
-
 #include "drachtio.h"
+
+using socket_t = boost::asio::ip::tcp::socket;
 
 namespace drachtio {
     
@@ -27,16 +29,16 @@ namespace drachtio {
     }
 
   private:
-    std::thread m_thread;
-    boost::asio::io_context m_ioservice;
-    std::string m_redisAddress;
-    std::string m_redisPassword;
-    unsigned int m_redisPort;
-    std::string m_redisKey;
-    unsigned int m_refreshSecs;
-    std::unordered_map<std::string, std::chrono::system_clock::time_point> m_bannedIps;
-    std::mutex m_mutex;
-    bool m_running;
+    std::thread                       m_thread;
+    boost::asio::io_context           m_ioservice;
+    std::string                       m_redisAddress;
+    std::string                       m_redisPassword;
+    unsigned int                      m_redisPort;
+    std::string                       m_redisKey;
+    unsigned int                      m_refreshSecs;
+    std::unordered_set<std::string>   m_bannedIps;
+    std::mutex                        m_mutex;
+    bool                              m_running;
   };
 }
 

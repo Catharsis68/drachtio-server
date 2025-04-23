@@ -66,6 +66,7 @@ THE SOFTWARE.
 
 #include "drachtio.h"
 #include "drachtio-config.hpp"
+#include "tmpbanlist.hpp"
 #include "client-controller.hpp"
 #include "sip-dialog-controller.hpp"
 #include "sip-dialog.hpp"
@@ -76,7 +77,6 @@ THE SOFTWARE.
 #include "request-router.hpp"
 #include "stats-collector.hpp"
 #include "blacklist.hpp"
-#include "tmpbanlist.hpp"
 
 using namespace std ;
 

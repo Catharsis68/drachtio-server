@@ -33,7 +33,7 @@ namespace drachtio {
         const std::string& redisPassword,
         const std::string& redisKey,
         const boost::asio::ip::tcp::endpoint& endpoint,
-        std::unordered_map<std::string, std::chrono::system_clock::time_point>& ips
+        std::unordered_set<std::string>& ips
     ) {
         try {
             auto ip = endpoint.address().to_string();
@@ -80,26 +80,16 @@ namespace drachtio {
                 redisFree(c);
                 return false;
             }
-
+            
             // Clear existing IPs and update with new data
             ips.clear();
-            auto now = std::chrono::system_clock::now();
 
             for (size_t i = 0; i < reply->elements; i += 2) {
                 if (i + 1 >= reply->elements) break;
                 
                 const char* ip_addr = reply->element[i]->str;
-                const char* expiry_str = reply->element[i + 1]->str;
-                
-                try {
-                    auto expiry_time = std::chrono::system_clock::from_time_t(std::stoll(expiry_str));
-                    if (expiry_time > now) {  // Only add if not expired
-                        ips[ip_addr] = expiry_time;
-                    }
-                } catch (const std::exception& e) {
-                    DR_LOG(log_error) << "TmpBanList::QueryTmpBanRedis - Error parsing expiry for IP " << ip_addr << ": " << e.what();
-                    continue;
-                }
+                // Simply store the IP address
+                ips.insert(ip_addr);
             }
 
             DR_LOG(log_info) << "TmpBanList::QueryTmpBanRedis - Retrieved " << ips.size() << " temporary banned IPs";

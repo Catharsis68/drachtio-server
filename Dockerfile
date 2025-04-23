@@ -4,8 +4,6 @@ FROM debian:bookworm-slim AS builder
 ARG BUILD_CPUS=16
 ARG DETECTED_TAG=v0.8.27-rc17-tmp-1
 
-ARG BUILD_FROM_LOCAL=false
-
 # Install build dependencies
 RUN set -ex \
     && apt-get update \
@@ -39,21 +37,11 @@ COPY . /usr/local/src/drachtio-server-local/
 
 # Use a script to handle the build logic
 RUN set -ex \
-    && if [ "$BUILD_FROM_LOCAL" = "true" ]; then \
-         cp -r /usr/local/src/drachtio-server-local/* /usr/local/src/drachtio-server/ \
-         && cd /usr/local/src/drachtio-server \
-         && git init \
-         && git submodule init \
-         && git submodule update --init --recursive; \
-       else \
-         git clone --depth=1 --branch ${DETECTED_TAG} --single-branch \
-         https://github.com/Catharsis68/drachtio-server /usr/local/src/drachtio-server \
-         && cd /usr/local/src/drachtio-server \
-         && git verify-tag ${DETECTED_TAG} || true \
-         && git submodule update --init --recursive --depth=1; \
-       fi \
+    && git clone --depth=1 --branch ${DETECTED_TAG} --single-branch \
+    https://github.com/Catharsis68/drachtio-server /usr/local/src/drachtio-server \
     && cd /usr/local/src/drachtio-server \
-    && git submodule foreach 'git submodule update --init --recursive' \
+    && git verify-tag ${DETECTED_TAG} || true \
+    && git submodule update --init --recursive --depth=1 \
     && ./bootstrap.sh \
     && rm -rf build \
     && mkdir build \
