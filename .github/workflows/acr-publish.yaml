@@ -1,10 +1,8 @@
-name: ACR Publish
+name: ACR Build and Push
 
 on:
   push:
-    branches:
-      - main
-      - feat
+    branches: [main, feat, release]
     tags:
       - "*"
   workflow_dispatch:
@@ -17,11 +15,12 @@ on:
 env:
   DOCKER_BUILDKIT: "1"
   IMAGE_NAME: vg-drachtio-server
+  BUILD_CPUS: "16"
 
 jobs:
   push:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Free Disk Space Before Build
@@ -38,6 +37,11 @@ jobs:
           echo "Disk space after cleanup:"
           df -h
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64 # Explicitly define platform
+
       - name: checkout
         uses: actions/checkout@v4.2.2
         with:
@@ -48,15 +52,18 @@ jobs:
         run: |-
           # Strip git ref prefix from version
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          echo "VERSION: $VERSION"
 
           # Strip "v" prefix from VERSION if it exists
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
 
-          # Use Docker `latest` tag convention if on main branch
-          [ "$VERSION" == "main" ] && VERSION=latest
+          # Use Docker `latest` tag for main and feat branches
+          if [ "$VERSION" == "main" ] || [ "$VERSION" == "feat" ]; then
+            VERSION=latest
+          fi
 
           # Set output for GitHub Actions
-          echo "tag=$tag" >> $GITHUB_OUTPUT
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Login to Container Registry
         uses: docker/login-action@v3
@@ -69,19 +76,20 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64 # Specify the architectures
-          file: ./docker/Dockerfile
-          tags: |
-            ${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:${{ steps.prepare_tag.outputs.tag }}
           push: true
+          tags: ${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:${{ steps.prepare_tag.outputs.tag }}
+          cache-from: type=registry,ref=${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+          build-args: |
+            BUILD_CPUS=${{ env.BUILD_CPUS }}
 
       - name: Build and push container image with latest tag
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64 # Specify the architectures
-          file: ./docker/Dockerfile
+          # platforms: linux/amd64,linux/arm64 # Specify the architectures
+          # file: ./docker/Dockerfile
           tags: ${{ vars.ACR_URL }}/${{ env.IMAGE_NAME }}:latest
           build-args: |
             BUILD_CPUS=16

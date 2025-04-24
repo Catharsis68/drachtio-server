@@ -79,7 +79,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64 # Specify the architectures
+          # platforms: linux/amd64,linux/arm64 # Specify the architectures
           tags: ${{ steps.prepare_tag.outputs.image_id }}:${{ steps.prepare_tag.outputs.version }}
           build-args: |
             BUILD_CPUS=16
