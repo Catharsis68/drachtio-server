@@ -1,4 +1,5 @@
 name: ACR Publish
+
 on:
   push:
     branches:
@@ -6,10 +7,6 @@ on:
       - feat
     tags:
       - "*"
-  # workflow_run:
-  #   workflows: [Test]
-  #   types: [completed]
-  # workflow_dispatch:
 
 env:
   DOCKER_BUILDKIT: "1"
