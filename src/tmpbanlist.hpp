@@ -2,7 +2,6 @@
 #define __TMPBANLIST_H__
 
 #include <boost/asio.hpp>
-#include <unordered_map>
 #include <unordered_set>
 #include <thread>
 #include <mutex>
