@@ -83,11 +83,18 @@ namespace drachtio {
             
             // Clear existing IPs and update with new data
             ips.clear();
+            
+            // Debug: Print raw Redis response
+            DR_LOG(log_debug) << "TmpBanList::QueryTmpBanRedis - Raw response contains " << reply->elements << " elements";
 
             for (size_t i = 0; i < reply->elements; i += 2) {
                 if (i + 1 >= reply->elements) break;
-                
+                                
                 const char* ip_addr = reply->element[i]->str;
+                const char* value = reply->element[i+1]->str;
+                // Debug: Print each IP and its associated value
+                DR_LOG(log_debug) << "TmpBanList::QueryTmpBanRedis - Found entry: IP=" << ip_addr << ", Value=" << value;
+                
                 // Simply store the IP address
                 ips.insert(ip_addr);
             }
@@ -155,8 +162,8 @@ namespace drachtio {
 
                     bool success = false;
                     for (const auto& endpoint : results) {
-                        DR_LOG(log_debug) << "TmpBanList resolved to " << endpoint.address();
-                        if (QueryTmpBanRedis(m_redisPassword, m_redisKey, endpoint, m_bannedIps)) {
+                        DR_LOG(log_debug) << "TmpBanList resolved to " << endpoint.endpoint().address();
+                        if (QueryTmpBanRedis(m_redisPassword, m_redisKey, endpoint.endpoint(), m_bannedIps)) {
                             success = true;
                             break;
                         }
@@ -169,18 +176,7 @@ namespace drachtio {
                     // Direct IP connection
                     boost::asio::ip::tcp::endpoint endpoint(ip_address, m_redisPort);
                     QueryTmpBanRedis(m_redisPassword, m_redisKey, endpoint, m_bannedIps);
-                }
-
-                // Clean expired entries
-                auto now = std::chrono::system_clock::now();
-                std::lock_guard<std::mutex> lock(m_mutex);
-                for (auto it = m_bannedIps.begin(); it != m_bannedIps.end();) {
-                    if (it->second <= now) {
-                        it = m_bannedIps.erase(it);
-                    } else {
-                        ++it;
-                    }
-                }
+                }              
 
             } catch (const std::exception& e) {
                 DR_LOG(log_error) << "TmpBanList thread exception: " << e.what();
