@@ -66,7 +66,6 @@ THE SOFTWARE.
 
 #include "drachtio.h"
 #include "drachtio-config.hpp"
-#include "tmpbanlist.hpp"
 #include "client-controller.hpp"
 #include "sip-dialog-controller.hpp"
 #include "sip-dialog.hpp"
@@ -83,6 +82,7 @@ using namespace std ;
 namespace drachtio {
 	
     class DrachtioController ;
+    class TmpBanList;
 
   class StackMsg {
   public:
