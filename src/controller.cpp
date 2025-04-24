@@ -292,7 +292,8 @@ namespace drachtio {
         m_nHomerPort(0), m_nHomerId(0), m_mtu(0), m_bAggressiveNatDetection(false), m_bMemoryDebug(false),
         m_nPrometheusPort(0), m_strPrometheusAddress("0.0.0.0"), m_tcpKeepaliveSecs(UINT16_MAX), m_bDumpMemory(false),
         m_minTlsVersion(0), m_bDisableNatDetection(false), m_pBlacklist(nullptr), m_bAlwaysSend180(false), 
-        m_bGloballyReadableLogs(false), m_bTlsVerifyClientCert(false), m_bRejectRegisterWithNoRealm(false) {
+        m_bGloballyReadableLogs(false), m_bTlsVerifyClientCert(false), m_bRejectRegisterWithNoRealm(false),
+        m_tmpBanRedisKey("tmpban:ip"), m_tmpBanRedisRefreshSecs(30), m_pTmpBanList(nullptr)  {
 
         getEnv();
 
@@ -455,6 +456,8 @@ namespace drachtio {
                 {"blacklist-redis-port", required_argument, 0, 'P'},
                 {"blacklist-redis-key", required_argument, 0, 'Q'},
                 {"blacklist-refresh-secs", required_argument, 0, 'R'},
+                {"tmp-ban-redis-key", required_argument, 0, 'tmp-ban-redis-key'}, 
+                {"tmp-ban-redis-refresh-secs", required_argument, 0, 'tmp-ban-redis-refresh-secs'}, 
                 {"always-send-180", no_argument, 0, 'S'},
                 {"user-agent-options-auto-respond", no_argument, 0, 'T'},
                 {"globally-readable-logs", no_argument, 0, 'U'},
@@ -671,6 +674,12 @@ namespace drachtio {
                 case 'Q':
                     m_redisKey = optarg;
                     break;
+                case 'tmp-ban-redis-key':
+                    m_tmpBanRedisKey = optarg;
+                    break;
+                case 'tmp-ban-redis-refresh-secs':
+                    m_tmpBanRedisRefreshSecs = ::atoi(optarg);
+                    break;
                 case 'R':
                     m_redisRefreshSecs = ::atoi(optarg);
                     break;
@@ -751,6 +760,8 @@ namespace drachtio {
         cerr << "    --blacklist-refresh-secs           how often to check for new blacklisted IPs" << endl;
         cerr << "    --blacklist-redis-sentinels        comma-separated list of redis sentinels in ip:port format" << endl;
         cerr << "    --blacklist-redis-password         password for redis server, if required" << endl;
+        cerr << "    --tmp-ban-redis-key                key for a redis hash that contains temporary banned IPs" << endl;
+        cerr << "    --tmp-ban-redis-refresh-secs       how often to check for new temporary banned IPs" << endl;
         cerr << "    --daemon                           Run the process as a daemon background process" << endl ;
         cerr << "    --cert-file                        TLS certificate file" << endl ;
         cerr << "    --chain-file                       TLS certificate chain file" << endl ;
@@ -1206,7 +1217,7 @@ namespace drachtio {
 
         /* mostly useful for kubernetes deployments, where it is verboten to mess with iptables */
         if (m_redisAddress.empty()) {
-            string redisAddress, redisSentinels, redisMaster, redisPassword, redisKey;
+            string redisAddress, redisSentinels, redisMaster, redisPassword, redisKey, tmpBanRedisKey;
             unsigned int redisPort, redisRefreshSecs;
             DR_LOG(log_notice) << "DrachtioController::run - blacklist checking config";
 
@@ -1219,7 +1230,12 @@ namespace drachtio {
                 m_redisKey = redisKey;
                 m_redisRefreshSecs = redisRefreshSecs;
             }
+
+            DR_LOG(log_notice) << "DrachtioController::run - tmpban checking config" << ", key is " << m_tmpBanRedisKey;
+            m_pTmpBanList = new TmpBanList(m_redisAddress, m_redisPort, m_redisPassword, m_tmpBanRedisKey, m_tmpBanRedisRefreshSecs);
+            m_pTmpBanList->start();
         }
+
         if (m_redisAddress.length() && m_redisKey.length()) {
             DR_LOG(log_notice) << "DrachtioController::run - blacklist is in redis " << m_redisAddress << ":" << m_redisPort 
                 << ", key is " << m_redisKey;
@@ -1411,6 +1427,12 @@ namespace drachtio {
             if (m_pBlacklist->isBlackListed(host.c_str())) {
                 return -1;
             }
+        }
+        string host;
+        getSourceAddressForMsg(msg, host);
+        if (m_pTmpBanList && m_pTmpBanList->isBanned(host.c_str())) {
+            DR_LOG(log_info) << "DrachtioController::processMessageStatelessly - rejecting request from temporarily banned IP " << host;
+            return -1;
         }
         DR_LOG(log_debug) << "processMessageStatelessly - incoming message with call-id " << sip->sip_call_id->i_id <<
             " does not match an existing call leg, processed in thread " << std::this_thread::get_id()  ;
@@ -2291,6 +2313,7 @@ namespace drachtio {
         STATS_COUNTER_CREATE(STATS_COUNTER_SIP_RESPONSES_IN, "count of sip responses received")
         STATS_COUNTER_CREATE(STATS_COUNTER_SIP_RESPONSES_OUT, "count of sip responses sent")
         STATS_COUNTER_CREATE(STATS_COUNTER_BUILD_INFO, "drachtio version running")
+        STATS_COUNTER_CREATE(STATS_COUNTER_TMPBAN_BLOCKED, "count of requests blocked by temporary ban")
 
         STATS_GAUGE_CREATE(STATS_GAUGE_START_TIME, "drachtio start time")
         STATS_GAUGE_CREATE(STATS_GAUGE_STABLE_DIALOGS, "count of SIP dialogs in progress")

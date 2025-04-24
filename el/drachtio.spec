@@ -1,5 +1,5 @@
 Name: drachtio
-Version: 0.8.14
+Version: 0.8.27-rc17
 Release: 1%{?dist}
 Summary: The drachtio server daemon
 URL: https://drachtio.org
