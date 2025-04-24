@@ -1,8 +1,8 @@
 # Stage 1: Build environment
 FROM debian:bookworm-slim AS builder
 
-ARG BUILD_CPUS=16
-ARG DETECTED_TAG=v0.8.27-rc17-tmp-2
+ARG BUILD_CPUS
+ARG VERSION
 
 # Install build dependencies
 RUN set -ex \
@@ -37,10 +37,9 @@ COPY . /usr/local/src/drachtio-server-local/
 
 # Use a script to handle the build logic
 RUN set -ex \
-    && git clone --depth=1 --branch ${DETECTED_TAG} --single-branch \
+    && git clone --depth=1 --branch ${VERSION} --single-branch \
     https://github.com/Catharsis68/drachtio-server /usr/local/src/drachtio-server \
     && cd /usr/local/src/drachtio-server \
-    && git verify-tag ${DETECTED_TAG} || true \
     && git submodule update --init --recursive --depth=1 \
     && ./bootstrap.sh \
     && rm -rf build \
