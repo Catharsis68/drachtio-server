@@ -2,7 +2,7 @@
 FROM debian:bookworm-slim AS builder
 
 ARG BUILD_CPUS=16
-ARG DETECTED_TAG=v0.8.27-rc17-tmp-1
+ARG DETECTED_TAG=v0.8.27-rc17-tmp-2
 
 # Install build dependencies
 RUN set -ex \
